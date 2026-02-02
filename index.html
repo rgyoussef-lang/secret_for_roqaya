@@ -593,18 +593,11 @@
 
             message.style.display = 'block';
 
-            if (noCount <= 15) {
-                let messageText = beggingMessages[noCount % beggingMessages.length];
-
-                if (Math.random() < 0.3 && messageText.includes('Please')) {
-                    messageText = messageText.replace('Please', '3afaaak');
-                } else if (Math.random() < 0.3 && !messageText.includes('3afaaak')) {
-                    messageText = '3afaaak ' + messageText.toLowerCase();
-                }
-
-                message.textContent = messageText;
-                emojiContainer.innerHTML = "❤️".repeat(Math.min(noCount, 5));
-            } else {
+        if (noCount <= 15) {
+            let messageText = beggingMessages[noCount % beggingMessages.length];
+            message.textContent = messageText;
+            emojiContainer.innerHTML = "❤️".repeat(Math.min(noCount, 5));
+        } else {
                 const emojiCount = Math.min(noCount - 15, 10);
                 let sadEmojiString = "";
                 for (let i = 0; i < emojiCount; i++) {
@@ -619,18 +612,66 @@
                 }
             }
 
-            yesScale += 0.1; // Changed from 0.2 to 0.1 for slower growth
-            yesBtn.style.transform = `scale(${yesScale})`;
+            // yesScale += 0.1;  Changed from 0.2 to 0.1 for slower growth
+            // yesBtn.style.transform = `scale(${yesScale})`;
 
             const container = document.querySelector('.container');
             const containerRect = container.getBoundingClientRect();
             const noBtnRect = noBtn.getBoundingClientRect();
 
-            const maxX = containerRect.width - noBtnRect.width - 30;
-            const maxY = containerRect.height - noBtnRect.height - 30;
+            // Calculate safe zones (avoid photo section and messages)
+            const photoSection = document.querySelector('.photo-section');
+            const messageSection = document.getElementById('message');
+            const finalMessageSection = document.getElementById('finalMessage');
+            const questionSection = document.getElementById('question');
 
-            const randomX = Math.max(10, Math.random() * maxX);
-            const randomY = Math.max(10, Math.random() * maxY);
+            // Get positions of elements to avoid
+            const photoRect = photoSection.getBoundingClientRect();
+            const questionRect = questionSection.getBoundingClientRect();
+            const containerTop = container.getBoundingClientRect().top;
+
+            // Convert to container-relative coordinates
+            const photoTop = photoRect.top - containerTop;
+            const photoBottom = photoRect.bottom - containerTop;
+            const questionTop = questionRect.top - containerTop;
+            const questionBottom = questionRect.bottom - containerTop;
+
+            // Define safe zones (X: anywhere, Y: avoid photo and question areas)
+            let safeY;
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            do {
+                // Generate random Y position
+                safeY = Math.max(10, Math.random() * (containerRect.height - noBtnRect.height - 30));
+                attempts++;
+    
+                // Check if position overlaps with photo section or question area
+                const overlapsPhoto = (safeY + noBtnRect.height > photoTop - 10) && (safeY < photoBottom + 10);
+                const overlapsQuestion = (safeY + noBtnRect.height > questionTop - 10) && (safeY < questionBottom + 10);
+    
+                // Also avoid bottom area where messages appear
+                const bottomAreaStart = containerRect.height * 0.7; // Bottom 30% of container
+                const overlapsBottom = safeY > bottomAreaStart;
+    
+                // If not overlapping and not in bottom area, we found a good spot
+                if (!overlapsPhoto && !overlapsQuestion && !overlapsBottom) {
+                    break;
+                }
+    
+                // If too many attempts, just use a safe default position
+                if (attempts >= maxAttempts) {
+                    safeY = containerRect.height * 0.6; // Middle-bottom area
+                    break;
+                }
+            } while (true);
+
+            // Generate random X position (anywhere is fine)
+            const safeX = Math.max(10, Math.random() * (containerRect.width - noBtnRect.width - 30));
+
+            noBtn.style.position = 'absolute';
+            noBtn.style.left = `${safeX}px`;
+            noBtn.style.top = `${safeY}px`;
 
             noBtn.style.position = 'absolute';
             noBtn.style.left = `${randomX}px`;
